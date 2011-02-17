@@ -1,0 +1,210 @@
+<?xml version="1.0"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkWindow" id="window1">
+    <child>
+      <object class="GtkNotebook" id="notebook1">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <child>
+          <object class="GtkHBox" id="hbox1">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkVBox" id="vbox1">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkHBox" id="hbox2">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkButton" id="button4">
+                        <property name="label" translatable="yes">&lt;</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkVBox" id="vbox2">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkImage" id="image1">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-missing-image</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button5">
+                        <property name="label" translatable="yes">&gt;</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="yalign">0.51999998092651367</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkTable" id="table1">
+                    <property name="visible">True</property>
+                    <property name="n_columns">3</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkButton" id="button1">
+                        <property name="label" translatable="yes">button</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button2">
+                        <property name="label" translatable="yes">button</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button3">
+                        <property name="label" translatable="yes">button</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkNotebook" id="notebook2">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <child>
+                  <object class="GtkIconView" id="iconview1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                  </object>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label4">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 1</property>
+                  </object>
+                  <packing>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label5">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 2</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label6">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">label</property>
+                  </object>
+                  <packing>
+                    <property name="position">2</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="label1">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">Sorting items</property>
+          </object>
+          <packing>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="label2">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">page 2</property>
+          </object>
+          <packing>
+            <property name="position">1</property>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="label3">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">page 3</property>
+          </object>
+          <packing>
+            <property name="position">2</property>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkAction" id="action1"/>
+</interface>
