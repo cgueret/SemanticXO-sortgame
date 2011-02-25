@@ -67,7 +67,6 @@ class DatastoreItem(object):
     def get_resource(self):
         return URIRef(OLPC['resource/%s' % self.id])
 
-        
 class Datastore(object):
     def __init__(self, url):
         self.url = url
