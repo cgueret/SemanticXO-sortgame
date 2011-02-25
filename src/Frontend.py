@@ -6,25 +6,27 @@ Created on Feb 17, 2011
 import gtk
 import gobject
 from sugar.graphics import style
-from Datastore import Box
+from Backend import Box, BackEnd
 #image_table.attach(self.image, 0, 2, 0, 1, xoptions=gtk.FILL | gtk.SHRINK, yoptions=gtk.FILL | gtk.SHRINK, xpadding=10, ypadding=10)
 
 class Item(object):
-    pixbuf = None
     
     def __init__(self):
         pass
     
     
 class SortingPanel(object):
-    TARGET = [("text/plain", gtk.TARGET_SAME_APP, 0)]
+    DND_TARGET = [("text/plain", gtk.TARGET_SAME_APP, 0)]
     images = {}
-    datastore = None
     
     def __init__(self, datastore):
         '''
         Constructor
         '''
+        # Maintains a mapping from model to box
+        self.model_to_box = {}
+        
+        # The datastore to dialog with
         self.datastore = datastore
         
         # Create the left part
@@ -34,8 +36,8 @@ class SortingPanel(object):
         self.mess = gtk.IconView(model)
         self.mess.set_text_column(0)
         self.mess.set_pixbuf_column(1)
-        self.mess.enable_model_drag_source(gtk.gdk.BUTTON1_MASK, self.TARGET , gtk.gdk.ACTION_MOVE)
-        self.mess.enable_model_drag_dest(self.TARGET, gtk.gdk.ACTION_MOVE)
+        self.mess.enable_model_drag_source(gtk.gdk.BUTTON1_MASK, self.DND_TARGET, gtk.gdk.ACTION_MOVE)
+        self.mess.enable_model_drag_dest(self.DND_TARGET, gtk.gdk.ACTION_MOVE)
         self.mess.connect("drag_data_get", self.drag_cb)
         self.mess.connect("drag_data_received", self.drop_cb)
         scrollable = gtk.ScrolledWindow()
@@ -46,18 +48,25 @@ class SortingPanel(object):
         # Create the notebook for the boxes (right part)
         self.boxes = gtk.Notebook()
         self.boxes.set_scrollable(True)
+        button = gtk.Button("Add a new box")
+        button.connect("clicked", self.create_box_cb)
+        right_part = gtk.VBox()
+        right_part.pack_start(self.boxes, expand=True, fill=True)
+        right_part.pack_end(button, expand=False, fill=True)
         
         # Create the main widget and pack all the elements
         self.widget = gtk.Table(rows=1, columns=2, homogeneous=True)
         self.widget.attach(left_part, 0, 1, 0, 1, xoptions=gtk.EXPAND | gtk.FILL, yoptions=gtk.EXPAND | gtk.FILL, xpadding=style.DEFAULT_SPACING, ypadding=style.DEFAULT_SPACING)
-        self.widget.attach(self.boxes, 1, 2, 0, 1, xoptions=gtk.EXPAND | gtk.FILL, yoptions=gtk.EXPAND | gtk.FILL, xpadding=style.DEFAULT_SPACING, ypadding=style.DEFAULT_SPACING)
+        self.widget.attach(right_part, 1, 2, 0, 1, xoptions=gtk.EXPAND | gtk.FILL, yoptions=gtk.EXPAND | gtk.FILL, xpadding=style.DEFAULT_SPACING, ypadding=style.DEFAULT_SPACING)
     
         # Load the items from the data store
-        self._load_data()
-       
-    def _load_data(self):
-        for box in self.datastore.get_boxes():
-            self.add_box(box.get_resource())
+        backend = BackEnd(datastore)
+        for box in backend.get_boxes():
+            self.add_box(box)
+            
+        # TODO Instead, ask for all the items
+        # if the item has no box it is in, put in the mess area
+        # otherwise create the box and put the item in it
     
     def add_item(self, file_name):
         '''
@@ -68,42 +77,47 @@ class SortingPanel(object):
             self.images[name] = gtk.gdk.pixbuf_new_from_file_at_size(file_name, style.zoom(160), style.zoom(120))
         self.mess.get_model().append([name, self.images[name]])
     
-    def add_box(self, name):
+    def add_box(self, box):
         '''
         Add a new box to the panels on the right
         '''
+        print 'Add box %s' % box.get_resource()
         model = gtk.ListStore(gobject.TYPE_STRING, gtk.gdk.Pixbuf)
-        box = gtk.IconView(model)
-        box.set_text_column(0)
-        box.set_pixbuf_column(1)
-        box.set_reorderable(True)
-        box.enable_model_drag_source(gtk.gdk.BUTTON1_MASK, self.TARGET, gtk.gdk.ACTION_MOVE)
-        box.enable_model_drag_dest(self.TARGET, gtk.gdk.ACTION_MOVE)
-        box.drag_dest_add_image_targets()
-        box.connect("drag_data_get", self.drag_cb)
-        box.connect("drag_data_received", self.drop_cb)
+        iconview = gtk.IconView(model)
+        iconview.set_text_column(0)
+        iconview.set_pixbuf_column(1)
+        iconview.set_reorderable(True)
+        iconview.enable_model_drag_source(gtk.gdk.BUTTON1_MASK, self.DND_TARGET, gtk.gdk.ACTION_MOVE)
+        iconview.enable_model_drag_dest(self.DND_TARGET, gtk.gdk.ACTION_MOVE)
+        iconview.drag_dest_add_image_targets()
+        iconview.connect("drag_data_get", self.drag_cb)
+        iconview.connect("drag_data_received", self.drop_cb)
         scrollable = gtk.ScrolledWindow()
         scrollable.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        scrollable.add(box)
+        scrollable.add(iconview)
         scrollable.show_all()
         hbox = gtk.HBox()
         hbox.pack_start(gtk.image_new_from_stock(gtk.STOCK_DIRECTORY, gtk.ICON_SIZE_BUTTON), False, False, 10)
-        hbox.pack_end(gtk.Label(name), True, True, 10)
+        #hbox.pack_end(gtk.Label(name), True, True, 10)
         hbox.show_all()
         self.boxes.append_page(scrollable, hbox)
-        
-    def create_box(self):
+        self.model_to_box[model] = box
+    
+    def create_box_cb(self, event):
         '''
         Create and save a new box
         '''
         box = Box()
+        self.add_box(box)
         self.datastore.save_item(box)
-            
+        
     def drag_cb(self, iconview, context, selection, target_id, etime):
         '''
         Called when an item has been taken from a box
         '''
         model = iconview.get_model()
+        if model in self.model_to_box.keys():
+            print "Removed from %s" % self.model_to_box[model].get_resource()
         iter = model.get_iter(iconview.get_selected_items()[0])
         selection.set_text(model.get_value(iter, 0))
         model.remove(iter)
@@ -113,6 +127,8 @@ class SortingPanel(object):
         Called when an item has been added to a box
         '''
         model = iconview.get_model()
+        if model in self.model_to_box.keys():
+            print "Put in %s" % self.model_to_box[model].get_resource()
         name = selection.get_text()
         model.append([name, self.images[name]])
         
@@ -149,9 +165,6 @@ class MainWindow(object):
         self.window.show_all()
 
         # Add some content to the sort application        
-        sortingPanel.add_box("Box 1")
-        sortingPanel.add_box("Box 2")
-        sortingPanel.create_box()
         sortingPanel.add_item("rubberDuck.jpg")
         sortingPanel.add_item("chair.jpg")
 

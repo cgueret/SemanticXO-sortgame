@@ -3,7 +3,7 @@ Created on Feb 19, 2011
 
 @author: cgueret
 '''
-from rdflib import ConjunctiveGraph, RDF, URIRef, Namespace, Literal
+from rdflib import ConjunctiveGraph, RDF, URIRef, Namespace
 import httplib
 import urllib
 import uuid
@@ -11,16 +11,19 @@ import uuid
 OLPC = Namespace("http://example.org/")
 
 class DatastoreItem(object):
-    meta = {}
-
-    def __init__(self):
-        id = uuid.uuid1()
-        self.set_metadata(OLPC['uuid'], Literal(id))
+    def __init__(self, type, id = None):
+        if id == None:
+            id = uuid.uuid1()
+        self.id = id
+        self.meta = {}
+        self.meta[RDF.type] = URIRef(OLPC[type])
         
     def append_metadata(self, key, value):
         '''
         Append a new value for a given key
         '''
+        # Set the namespace to the key
+        key = OLPC['key']
         # If not in, create
         if key not in self.meta.keys():
             self.meta[key] = []
@@ -36,6 +39,8 @@ class DatastoreItem(object):
         '''
         Suppress a key or a value within a specific key
         '''
+        # Set the namespace to the key
+        key = OLPC['key']
         if key not in self.meta.keys():
             return
         if value == None:
@@ -50,59 +55,33 @@ class DatastoreItem(object):
         '''
         Assign a specific value to a meta data key
         '''
+        # Set the namespace to the key
+        key = OLPC['key']
         # Set the value
         self.meta[key] = value
+        
         
     def get_metadata(self):
         return self.meta.items()
     
     def get_resource(self):
-        return URIRef(OLPC['resource/%s' % self.meta[OLPC['uuid']]])
+        return URIRef(OLPC['resource/%s' % self.id])
 
-class Item(DatastoreItem):
-    pass
-    
-class Box(DatastoreItem):
-    def __init__(self):
-        DatastoreItem.__init__(self)
-        self.meta[RDF.type] = URIRef(OLPC['Box'])
-    
-    def add_item(self, item):
-        self.append_metadata(OLPC['hasItem'], item.get_resource())
         
 class Datastore(object):
-    url = None
-    
     def __init__(self, url):
         self.url = url
-        pass
     
-    def get_boxes(self):
-        '''
-        Query for all the items of class Box
-        '''
-        query = 'SELECT * WHERE { ?s <%s> <%s>}' % (RDF.type, OLPC['Box'])
+    def sparql_get(self, query):
         params = {'query': query, 'format' : 'csv'}
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         conn = httplib.HTTPConnection(self.url)
         conn.request("POST", "/sparql", urllib.urlencode(params), headers=headers)
         response = conn.getresponse()
-        boxes = []
-        for line in response.read().split('\n')[1:]:
-            print line
-            uri = line.split(',')[-1][4:-1]
-            id = uri.split('/')[-1]
-            # Set the box
-            box = Box()
-            box.set_metadata(OLPC['uuid'], Literal(id))
-            boxes.append(box)
-            # Load its content
-            query = 'SELECT * WHERE { <%s> <%s> ?s}' % (box.get_resource(), OLPC['hasItem'])
-            # TODO finish that
-            
+        results = response.read().split('\n')[1:-1]
         conn.close()
-        return boxes
-    
+        return results
+        
     def save_item(self, item):
         '''
         Convert the item into a graph and put the graph into the triple store
@@ -124,5 +103,6 @@ class Datastore(object):
         headers = { 'Accept' : '*/*', 'Content-Type': 'application/rdf+xml' }
         conn = httplib.HTTPConnection(self.url)
         conn.request("PUT", "/data/%s" % item.get_resource(), body=graph.serialize(), headers=headers)
-        #conn.close()
+        conn.getresponse()
+        conn.close()
         

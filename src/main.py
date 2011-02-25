@@ -3,7 +3,7 @@ Created on Feb 17, 2011
 
 @author: cgueret
 '''
-from Interface import MainWindow
+from Frontend import MainWindow
 from Datastore import Datastore
 import gtk
 
