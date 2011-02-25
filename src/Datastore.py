@@ -13,8 +13,10 @@ OLPC = Namespace("http://example.org/")
 class DatastoreItem(object):
     meta = {}
 
-    def __init__(self):
-        id = uuid.uuid1()
+    def __init__(self, id = None):
+        print 'new'
+        if id == None:
+            id = uuid.uuid1()
         self.set_metadata(OLPC['uuid'], Literal(id))
         
     def append_metadata(self, key, value):
@@ -53,6 +55,7 @@ class DatastoreItem(object):
         # Set the value
         self.meta[key] = value
         
+        
     def get_metadata(self):
         return self.meta.items()
     
@@ -63,8 +66,8 @@ class Item(DatastoreItem):
     pass
     
 class Box(DatastoreItem):
-    def __init__(self):
-        DatastoreItem.__init__(self)
+    def __init__(self, id = None):
+        DatastoreItem.__init__(self, id)
         self.meta[RDF.type] = URIRef(OLPC['Box'])
     
     def add_item(self, item):
@@ -88,18 +91,18 @@ class Datastore(object):
         conn.request("POST", "/sparql", urllib.urlencode(params), headers=headers)
         response = conn.getresponse()
         boxes = []
-        for line in response.read().split('\n')[1:]:
-            print line
+        for line in response.read().split('\n')[1:-1]:
             uri = line.split(',')[-1][4:-1]
             id = uri.split('/')[-1]
+            print "load box %s" % id
             # Set the box
-            box = Box()
-            box.set_metadata(OLPC['uuid'], Literal(id))
+            box = Box(id)
+            print box.get_metadata()
             boxes.append(box)
             # Load its content
             query = 'SELECT * WHERE { <%s> <%s> ?s}' % (box.get_resource(), OLPC['hasItem'])
             # TODO finish that
-            
+        print boxes
         conn.close()
         return boxes
     
@@ -124,5 +127,6 @@ class Datastore(object):
         headers = { 'Accept' : '*/*', 'Content-Type': 'application/rdf+xml' }
         conn = httplib.HTTPConnection(self.url)
         conn.request("PUT", "/data/%s" % item.get_resource(), body=graph.serialize(), headers=headers)
-        #conn.close()
+        conn.getresponse()
+        conn.close()
         
