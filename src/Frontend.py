@@ -17,7 +17,6 @@ class Item(object):
     
 class SortingPanel(object):
     DND_TARGET = [("text/plain", gtk.TARGET_SAME_APP, 0)]
-    images = {}
     
     def __init__(self, datastore):
         '''
@@ -25,8 +24,13 @@ class SortingPanel(object):
         '''
         # Maintains a mapping from model to box
         self.model_to_box = {}
+        self.box_to_model = {}
         
-        # The datastore to dialog with
+        # Maintains a mapping from id to item
+        self.id_to_item = {}
+        self.name_to_id = {}
+        
+        # The data store to dialog with
         self.datastore = datastore
         
         # Create the left part
@@ -59,23 +63,34 @@ class SortingPanel(object):
         self.widget.attach(left_part, 0, 1, 0, 1, xoptions=gtk.EXPAND | gtk.FILL, yoptions=gtk.EXPAND | gtk.FILL, xpadding=style.DEFAULT_SPACING, ypadding=style.DEFAULT_SPACING)
         self.widget.attach(right_part, 1, 2, 0, 1, xoptions=gtk.EXPAND | gtk.FILL, yoptions=gtk.EXPAND | gtk.FILL, xpadding=style.DEFAULT_SPACING, ypadding=style.DEFAULT_SPACING)
     
-        # Load the items from the data store
+        # Get the data from the backend
         backend = BackEnd(datastore)
-        for box in backend.get_boxes():
+        boxes = backend.get_boxes()
+        items = backend.get_items()
+        
+        # Load the boxes
+        for box in boxes:
             self.add_box(box)
+        
+        # Load the items
+        for item in items:
+            self.id_to_item[item.get_resource()] = item
+            self.name_to_id[item.get_name()] = item.get_resource()
             
-        # TODO Instead, ask for all the items
-        # if the item has no box it is in, put in the mess area
-        # otherwise create the box and put the item in it
-    
-    def add_item(self, file_name):
-        '''
-        Change the image that shall be moved into a box
-        '''
-        name = file_name.split('.')[0]
-        if name not in self.images.keys():
-            self.images[name] = gtk.gdk.pixbuf_new_from_file_at_size(file_name, style.zoom(160), style.zoom(120))
-        self.mess.get_model().append([name, self.images[name]])
+        # Fill the boxes
+        for box in boxes:
+            for id in box.get_metadata('hasItem'):
+                model = self.box_to_model[box]
+                item = self.id_to_item[id]
+                model.append([item.get_name(), item.get_depiction()])
+                items.remove(item)
+
+        # Add all the items that are not into boxes into the mess area
+        for item in items:
+            self.mess.get_model().append([item.get_name(), item.get_depiction()])
+        
+        del boxes
+        del items
     
     def add_box(self, box):
         '''
@@ -102,7 +117,8 @@ class SortingPanel(object):
         hbox.show_all()
         self.boxes.append_page(scrollable, hbox)
         self.model_to_box[model] = box
-    
+        self.box_to_model[box] = model
+        
     def create_box_cb(self, event):
         '''
         Create and save a new box
@@ -127,10 +143,11 @@ class SortingPanel(object):
         Called when an item has been added to a box
         '''
         model = iconview.get_model()
-        if model in self.model_to_box.keys():
-            print "Put in %s" % self.model_to_box[model].get_resource()
         name = selection.get_text()
-        model.append([name, self.images[name]])
+        if model in self.model_to_box.keys():
+            print "%s put in %s" % (self.name_to_id[name], self.model_to_box[model].get_resource())
+        item = self.id_to_item[self.name_to_id[name]]
+        model.append([name, item.get_depiction()])
         
     def get_widget(self):
         '''
@@ -164,11 +181,7 @@ class MainWindow(object):
         self.window.add(self.panels)
         self.window.show_all()
 
-        # Add some content to the sort application        
-        sortingPanel.add_item("rubberDuck.jpg")
-        sortingPanel.add_item("chair.jpg")
-
-    def keypress_cb(self, widget, event) :
+    def keypress_cb(self, widget, event):
         if event.keyval == gtk.keysyms.Escape or event.keyval == gtk.keysyms.Return :
             gtk.main_quit()
         

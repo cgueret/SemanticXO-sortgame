@@ -55,15 +55,22 @@ class DatastoreItem(object):
         '''
         Assign a specific value to a meta data key
         '''
-        # Set the namespace to the key
-        key = OLPC['key']
-        # Set the value
+        # If the key is a string, force the default namespace
+        if type(key) == type(''):
+            key = OLPC[key]
         self.meta[key] = value
         
         
-    def get_metadata(self):
-        return self.meta.items()
-    
+    def get_metadata(self, key = None):
+        if key == None:
+            return self.meta.items()
+        else:
+            if type(key) == type(''):
+                key = OLPC[key]
+            if key not in self.meta.keys():
+                return []
+            return self.meta[key]
+        
     def get_resource(self):
         return URIRef(OLPC['resource/%s' % self.id])
 
@@ -81,6 +88,16 @@ class Datastore(object):
         conn.close()
         return results
         
+    def sparql_get2(self, query):
+        params = {'query': query, 'format' : 'ntriples'}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        conn = httplib.HTTPConnection(self.url)
+        conn.request("POST", "/sparql", urllib.urlencode(params), headers=headers)
+        response = conn.getresponse()
+        results = response.read()
+        conn.close()
+        return results
+    
     def save_item(self, item):
         '''
         Convert the item into a graph and put the graph into the triple store
@@ -98,7 +115,7 @@ class Datastore(object):
             else:
                 graph.add((item.get_resource(), key, values))
         # Save it
-        print graph.serialize()
+        #print graph.serialize()
         headers = { 'Accept' : '*/*', 'Content-Type': 'application/rdf+xml' }
         conn = httplib.HTTPConnection(self.url)
         conn.request("PUT", "/data/%s" % item.get_resource(), body=graph.serialize(), headers=headers)
