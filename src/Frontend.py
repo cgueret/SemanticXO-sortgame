@@ -132,23 +132,31 @@ class SortingPanel(object):
         Called when an item has been taken from a box
         '''
         model = iconview.get_model()
-        if model in self.model_to_box.keys():
-            print "Removed from %s" % self.model_to_box[model].get_resource()
         iter = model.get_iter(iconview.get_selected_items()[0])
-        selection.set_text(model.get_value(iter, 0))
+        name = model.get_value(iter, 0)
+        selection.set_text(name)
         model.remove(iter)
-
+        if model in self.model_to_box.keys():
+            box = self.model_to_box[model]
+            print "%s removed from %s" % (self.name_to_id[name], box.get_resource())
+            item = self.id_to_item[self.name_to_id[name]]
+            box.remove_item(item)
+            self.datastore.save_item(box)
+            
     def drop_cb(self, iconview, context, x, y, selection, info, etime):
         '''
         Called when an item has been added to a box
         '''
         model = iconview.get_model()
         name = selection.get_text()
-        if model in self.model_to_box.keys():
-            print "%s put in %s" % (self.name_to_id[name], self.model_to_box[model].get_resource())
         item = self.id_to_item[self.name_to_id[name]]
         model.append([name, item.get_depiction()])
-        
+        if model in self.model_to_box.keys():
+            box = self.model_to_box[model]
+            print "%s put in %s" % (self.name_to_id[name], box.get_resource())
+            box.add_item(item)
+            self.datastore.save_item(box)
+            
     def get_widget(self):
         '''
         Return the widget of this panel

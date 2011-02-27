@@ -3,7 +3,7 @@ Created on Feb 19, 2011
 
 @author: cgueret
 '''
-from rdflib import ConjunctiveGraph, RDF, URIRef, Namespace
+from rdflib import ConjunctiveGraph, RDF, URIRef, Namespace, Literal
 import httplib
 import urllib
 import uuid
@@ -23,7 +23,8 @@ class DatastoreItem(object):
         Append a new value for a given key
         '''
         # Set the namespace to the key
-        key = OLPC['key']
+        if type(key) == type(''):
+            key = OLPC[key]
         # If not in, create
         if key not in self.meta.keys():
             self.meta[key] = []
@@ -40,7 +41,8 @@ class DatastoreItem(object):
         Suppress a key or a value within a specific key
         '''
         # Set the namespace to the key
-        key = OLPC['key']
+        if type(key) == type(''):
+            key = OLPC[key]
         if key not in self.meta.keys():
             return
         if value == None:
@@ -58,7 +60,7 @@ class DatastoreItem(object):
         # If the key is a string, force the default namespace
         if type(key) == type(''):
             key = OLPC[key]
-        self.meta[key] = value
+        self.meta[key] = [value]
         
         
     def get_metadata(self, key = None):
@@ -88,15 +90,31 @@ class Datastore(object):
         conn.close()
         return results
         
-    def sparql_get2(self, query):
-        params = {'query': query, 'format' : 'ntriples'}
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        conn = httplib.HTTPConnection(self.url)
-        conn.request("POST", "/sparql", urllib.urlencode(params), headers=headers)
-        response = conn.getresponse()
-        results = response.read()
-        conn.close()
-        return results
+    def get_items(self, type):
+        '''
+        Query the datastore for all the items
+        '''
+        query = 'SELECT * WHERE { ?s <%s> <%s>} ORDER BY ?s' % (RDF.type, OLPC[type])
+        items = []
+        for line in self.sparql_get(query):
+            uri = line.split(',')[-1][4:-1]
+            id = uri.split('/')[-1]
+            print "load item %s" % id
+            item = DatastoreItem(type, id)
+            items.append(item)
+            # Load all the meta data
+            query = 'SELECT * WHERE { <%s> ?p ?o}' % item.get_resource()
+            for line in self.sparql_get(query):
+                (p,o) = line.split(',')[1:]
+                if p[4:-1] == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
+                    continue
+                p = URIRef(p[4:-1])
+                if o[0:3] == 'uri':
+                    o = URIRef(o[4:-1])
+                elif o[0] == '"':
+                    o = Literal(o[1:-1])
+                item.set_metadata(p, o) 
+        return items
     
     def save_item(self, item):
         '''

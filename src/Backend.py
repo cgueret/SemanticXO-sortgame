@@ -27,23 +27,29 @@ class Item(DatastoreItem):
     An item has an image and a name, it is meant to be put into boxes
     '''
     def __init__(self, id=None):
-        DatastoreItem.__init__(self, 'Item', id)
+        #DatastoreItem.__init__(self, 'Item', id)
+        super(Item, self).__init__('Item', id)
+        print 'fdfds'
         self.pixbuf = None
 
     def get_depiction(self):
         if self.pixbuf == None:
-            print self.get_metadata('hasDepiction')
-            self.pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(self.get_metadata('hasDepiction'), style.zoom(160), style.zoom(120))
+            self.pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(self.get_metadata('hasDepiction')[0], style.zoom(160), style.zoom(120))
         return self.pixbuf
     
     def set_depiction(self, file_name):
         self.set_metadata('hasDepiction', Literal(file_name))
         
     def get_name(self):
-        return self.get_metadata('name')
+        return self.get_metadata('name')[0]
     
     def set_name(self, name):
         self.set_metadata('name', Literal(name))
+    
+    @classmethod
+    def cast(cls, instance):
+        instance.__class__ = cls
+        instance.pixbuf = None
         
 class BackEnd(object):
     def __init__(self, datastore):
@@ -62,6 +68,13 @@ class BackEnd(object):
         '''
         Query the datastore for all the items
         '''
+        items = self.datastore.get_items('Item')
+        for item in items:
+            item = Item.cast(item)
+        #print items[0].get_metadata()
+        #print items
+        return items
+
         query = 'SELECT * WHERE { ?s <%s> <%s>}' % (RDF.type, OLPC['Item'])
         items = []
         for line in self.datastore.sparql_get(query):
@@ -77,12 +90,11 @@ class BackEnd(object):
                 if p[4:-1] == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
                     continue
                 p = URIRef(p[4:-1])
-                if o[0:3] == 'uri(':
+                if o[0:3] == 'uri':
                     o = URIRef(o[4:-1])
                 elif o[0] == '"':
                     o = Literal(o[1:-1])
                 item.set_metadata(p, o)
-                print (p,o)
                     
         return items
     
@@ -90,7 +102,7 @@ class BackEnd(object):
         '''
         Query for all the items of class Box
         '''
-        query = 'SELECT * WHERE { ?s <%s> <%s>}' % (RDF.type, OLPC['Box'])
+        query = 'SELECT * WHERE { ?s <%s> <%s>} ORDER BY ?s' % (RDF.type, OLPC['Box'])
         boxes = []
         for line in self.datastore.sparql_get(query):
             uri = line.split(',')[-1][4:-1]
@@ -102,6 +114,15 @@ class BackEnd(object):
             # Load all the meta data
             query = 'SELECT * WHERE { <%s> ?p ?o}' % box.get_resource()
             for line in self.datastore.sparql_get(query):
-                print line
+                (p,o) = line.split(',')[1:]
+                if p[4:-1] == 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
+                    continue
+                p = URIRef(p[4:-1])
+                if o[0:3] == 'uri':
+                    o = URIRef(o[4:-1])
+                elif o[0] == '"':
+                    o = Literal(o[1:-1])
+                print (p,o)
+                box.set_metadata(p, o)
         return boxes
     
