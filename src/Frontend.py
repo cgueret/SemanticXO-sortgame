@@ -18,7 +18,7 @@ class Item(object):
 class SortingPanel(object):
     DND_TARGET = [("text/plain", gtk.TARGET_SAME_APP, 0)]
     
-    def __init__(self, datastore):
+    def __init__(self, datastore, backend):
         '''
         Constructor
         '''
@@ -32,6 +32,7 @@ class SortingPanel(object):
         
         # The data store to dialog with
         self.datastore = datastore
+        self.backend = backend
         
         # Create the left part
         left_part = gtk.Notebook()
@@ -64,9 +65,8 @@ class SortingPanel(object):
         self.widget.attach(right_part, 1, 2, 0, 1, xoptions=gtk.EXPAND | gtk.FILL, yoptions=gtk.EXPAND | gtk.FILL, xpadding=style.DEFAULT_SPACING, ypadding=style.DEFAULT_SPACING)
     
         # Get the data from the backend
-        backend = BackEnd(datastore)
-        boxes = backend.get_boxes()
-        items = backend.get_items()
+        boxes = self.backend.get_boxes()
+        items = self.backend.get_items()
         
         # Load the boxes
         for box in boxes:
@@ -166,7 +166,7 @@ class SortingPanel(object):
     
     
 class MainWindow(object):
-    def __init__(self, datastore):
+    def __init__(self, datastore, backend):
         '''
         Constructor
         '''
@@ -179,7 +179,7 @@ class MainWindow(object):
         self.window.set_position(gtk.WIN_POS_CENTER)
         
         # Create the panels of the application
-        sortingPanel = SortingPanel(datastore)
+        sortingPanel = SortingPanel(datastore, backend)
         
         # Pack everything
         self.panels = gtk.Notebook()

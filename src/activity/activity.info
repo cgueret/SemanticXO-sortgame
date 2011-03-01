@@ -1,0 +1,9 @@
+[Activity]
+name = Sort Game
+service_name = nl.vu.SortGameActivity
+icon = sort
+exec = sugar-activity SortGameActivity.SortGameActivity
+show_launcher = yes
+activity_version = 1
+mime_types = text/plain
+license = GPLv2+
