@@ -68,12 +68,13 @@ class BackEnd(object):
         '''
         # Create the entry in the data store
         item = Item()
-        item.set_name(file_name.split('.')[0])
-        item.set_depiction(file_name)
+        item.set_name(file_name.split('/')[-1].split('.')[0])
+        item.set_depiction(file_name.split('/')[-1])
         self.datastore.save_item(item)
+        
         # Save the image
         imagebytes = file.read(open(file_name, 'r'))
-        f = open(os.path.join(self.activity_root, 'data', file_name), 'w')
+        f = open(os.path.join(self.activity_root, 'data', file_name.split('/')[-1]), 'w')
         try:
             f.write(imagebytes)
         finally:

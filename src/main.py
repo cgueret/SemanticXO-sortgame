@@ -23,4 +23,3 @@ if __name__ == '__main__':
     # Start gtk main loop
     gtk.main()
 
-# siacia - syndicat intercommunal de l'argens - frejus, roquebrune
